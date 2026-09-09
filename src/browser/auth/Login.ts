@@ -131,11 +131,7 @@ export class Login {
                         `相同状态计数: ${sameStateCount}/4 状态为 "${state}"`
                     )
                     if (sameStateCount >= 4) {
-                        this.bot.logger.warn(
-                            this.bot.isMobile,
-                            'LOGIN',
-                            `在状态 "${state}" 停滞4次循环，刷新页面`
-                        )
+                        this.bot.logger.warn(this.bot.isMobile, 'LOGIN', `在状态 "${state}" 停滞4次循环，刷新页面`)
                         await page.reload({ waitUntil: 'domcontentloaded' })
                         await this.bot.utils.wait(3000)
                         sameStateCount = 0
@@ -263,11 +259,7 @@ export class Login {
                 results.push('FOOTER_ACTION')
             } else {
                 if (footerAction && footerTargetsSpecificProof) {
-                    this.bot.logger.debug(
-                        this.bot.isMobile,
-                        'DETECT-STATE',
-                        '页脚指向具体验证方式；保持主登录方式'
-                    )
+                    this.bot.logger.debug(this.bot.isMobile, 'DETECT-STATE', '页脚指向具体验证方式；保持主登录方式')
                 }
                 this.bot.logger.debug(this.bot.isMobile, 'DETECT-STATE', '检测到主无密码登录操作')
                 results.push('PASSWORDLESS_SEND_CODE')
@@ -486,11 +478,7 @@ export class Login {
             // Enter password - use it only when Microsoft actually presents the password page
             case 'PASSWORD_INPUT': {
                 if (!account.password) {
-                    this.bot.logger.info(
-                        this.bot.isMobile,
-                        'LOGIN',
-                        '检测到密码输入页但未配置密码；返回登录方式选择'
-                    )
+                    this.bot.logger.info(this.bot.isMobile, 'LOGIN', '检测到密码输入页但未配置密码；返回登录方式选择')
                     if (await this.tryClick(page, this.selectors.backButton, 'Back button')) return true
 
                     this.bot.logger.warn(this.bot.isMobile, 'LOGIN', '未配置密码且无法返回登录方式选择')
@@ -582,11 +570,7 @@ export class Login {
                         const confirmed = await this.bot.browser.utils.ghostClick(page, this.selectors.primaryButton)
                         if (!confirmed) {
                             this.passwordlessMethodSelected = false
-                            this.bot.logger.warn(
-                                this.bot.isMobile,
-                                'LOGIN',
-                                '无法发送Microsoft Authenticator请求'
-                            )
+                            this.bot.logger.warn(this.bot.isMobile, 'LOGIN', '无法发送Microsoft Authenticator请求')
                             return false
                         }
                         await this.waitForIdle(page, 'after Microsoft Authenticator request')
@@ -602,7 +586,6 @@ export class Login {
                             this.bot.isMobile,
                             'LOGIN',
                             '没有可用的非交互登录方式；邮箱验证码回退需要交互式终端输入'
-
                         )
                         return false
                     }
@@ -650,11 +633,7 @@ export class Login {
             case 'EMAIL_VERIFICATION_INPUT': {
                 if (!account.password) {
                     if (!canPromptForInput()) {
-                        this.bot.logger.error(
-                            this.bot.isMobile,
-                            'LOGIN',
-                            '邮箱验证需要已配置的密码或交互式终端输入'
-                        )
+                        this.bot.logger.error(this.bot.isMobile, 'LOGIN', '邮箱验证需要已配置的密码或交互式终端输入')
                         return false
                     }
 
@@ -663,11 +642,7 @@ export class Login {
                     return true
                 }
 
-                this.bot.logger.info(
-                    this.bot.isMobile,
-                    'LOGIN',
-                    '检测到邮箱验证输入；正在检查备选方式'
-                )
+                this.bot.logger.info(this.bot.isMobile, 'LOGIN', '检测到邮箱验证输入；正在检查备选方式')
                 await this.waitForIdle(page, 'on email verification page')
 
                 const footerActions = page.locator(this.selectors.footerAction)
@@ -783,11 +758,7 @@ export class Login {
 
             // Enter your code - prefer its alternate-method footer before Back to avoid an email-code loop
             case 'OTP_CODE_ENTRY': {
-                this.bot.logger.info(
-                    this.bot.isMobile,
-                    'LOGIN',
-                    '检测到OTP代码输入页面；尝试可用的备选登录方式'
-                )
+                this.bot.logger.info(this.bot.isMobile, 'LOGIN', '检测到OTP代码输入页面；尝试可用的备选登录方式')
 
                 if (await this.checkSelector(page, this.selectors.footerAction)) {
                     const clicked = await this.bot.browser.utils.ghostClick(page, this.selectors.footerAction)
@@ -819,11 +790,7 @@ export class Login {
                             return true
                         }
 
-                        this.bot.logger.debug(
-                            this.bot.isMobile,
-                            'LOGIN',
-                            'OTP页脚操作未离开代码输入页；回退到返回按钮'
-                        )
+                        this.bot.logger.debug(this.bot.isMobile, 'LOGIN', 'OTP页脚操作未离开代码输入页；回退到返回按钮')
                     }
                 }
 
@@ -840,11 +807,7 @@ export class Login {
             case 'UNKNOWN': {
                 const rawUrl = page.url()
                 const url = new URL(rawUrl)
-                this.bot.logger.warn(
-                    this.bot.isMobile,
-                    'LOGIN',
-                    `在 ${url.hostname}${url.pathname} 的未知状态，等待中`
-                )
+                this.bot.logger.warn(this.bot.isMobile, 'LOGIN', `在 ${url.hostname}${url.pathname} 的未知状态，等待中`)
 
                 if (this.bot.config.errorDiagnostics && !this.capturedUnknownUrls.has(rawUrl)) {
                     this.capturedUnknownUrls.add(rawUrl)
@@ -1002,11 +965,7 @@ export class Login {
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error)
 
-            this.bot.logger.error(
-                this.bot.isMobile,
-                'GET-REWARD-SESSION',
-                `获取奖励上下文失败: ${message}`
-            )
+            this.bot.logger.error(this.bot.isMobile, 'GET-REWARD-SESSION', `获取奖励上下文失败: ${message}`)
 
             throw new Error(`获取奖励上下文失败: ${message}`)
         }

@@ -16,9 +16,5 @@ export async function configureMediaBlocking(bot: MicrosoftRewardsBot, context: 
         await route.fallback()
     })
 
-    bot.logger.info(
-        bot.isMobile,
-        'BROWSER',
-        '媒体加载已禁用 | 拦截资源类型=image,media | http缓存=已通过路由禁用'
-    )
+    bot.logger.info(bot.isMobile, 'BROWSER', '媒体加载已禁用 | 拦截资源类型=image,media | http缓存=已通过路由禁用')
 }

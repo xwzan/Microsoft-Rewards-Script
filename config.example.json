@@ -39,10 +39,7 @@
         "maxBonusSearches": 110,
         "parallelSearching": false,
         "clusterSearch": true,
-        "queryEngines": [
-            "china",
-            "local"
-        ],
+        "queryEngines": ["china", "local"],
         "searchResultVisitTime": "20sec",
         "searchDelay": {
             "min": "6min",

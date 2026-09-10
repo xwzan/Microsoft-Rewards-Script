@@ -50,7 +50,7 @@ jobs:
           IMAGE="${{ env.REGISTRY }}/${{ steps.image-name.outputs.name }}"
           TAG="${{ steps.pkg-version.outputs.version }}"
           echo "Checking image: ${IMAGE}:${TAG}"
-          # 在shell内做字符串截取，不要放在 ${{ }} 表达式里面
+          # 在shell内做字符串截取
           REPO_FULL="${{ steps.image-name.outputs.name }}"
           PKG_NAME="${REPO_FULL#*/}"
           set +e
@@ -87,7 +87,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
+          username: ${{ shturl.cc/ad }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up QEMU (multi arch)

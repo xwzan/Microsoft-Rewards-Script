@@ -4,14 +4,18 @@ on:
     branches:
       - v4
   workflow_dispatch: # 支持网页手动触发
+
 permissions:
   contents: write
   packages: write # 推送 GHCR 镜像必须
+
 env:
   REGISTRY: ghcr.io
+
 concurrency:
   group: docker-build-${{ github.ref }}
   cancel-in-progress: true # 新提交取消旧构建任务
+
 jobs:
   build-push:
     runs-on: ubuntu-latest
@@ -21,8 +25,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      # 修复：setup-node 目前最新大版本是 v4 (原 v7 会导致找不到该 Action)
       - name: Setup Node.js 24 (read package.json version)
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v4
         with:
           node-version: 24
 
@@ -50,14 +55,16 @@ jobs:
           IMAGE="${{ env.REGISTRY }}/${{ steps.image-name.outputs.name }}"
           TAG="${{ steps.pkg-version.outputs.version }}"
           echo "Checking image: ${IMAGE}:${TAG}"
-          # 在shell内做字符串截取
+          
           REPO_FULL="${{ steps.image-name.outputs.name }}"
           PKG_NAME="${REPO_FULL#*/}"
+          
           set +e
           gh api --method GET /repos/${{ github.repository_owner }}/${{ github.event.repository.name }}/packages/container/${PKG_NAME}/versions \
             --jq ".[] | select( any(.metadata.container.tags[]; . == \"${TAG}\") )" >/dev/null 2>&1
           RET=$?
           set -e
+          
           if [ ${RET} -eq 0 ]; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
             echo "✅ Image tag ${TAG} already exists, skip build"
@@ -66,11 +73,10 @@ jobs:
             echo "❌ Image tag ${TAG} not found, proceed build"
           fi
 
-      - name: Skip build if image already exists
-        if: steps.check-image.outputs.exists == 'true'
-        run: echo "Image already present, nothing to do." && exit 0
+      # 修复：移除无效的 Skip build 步骤，改为在后续所有步骤加 if 条件
 
       - name: Calculate all docker tags
+        if: steps.check-image.outputs.exists != 'true' # 已存在则跳过
         id: tags
         run: |
           set -euo pipefail
@@ -83,20 +89,25 @@ jobs:
           echo "Generated tags:"
           echo "${TAGS}"
 
+      # 修复：重点修改此处。将错误的 shturl.cc/ad 改为正确的 github.actor
       - name: Login GHCR
+        if: steps.check-image.outputs.exists != 'true'
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ shturl.cc/ad }}
+          username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up QEMU (multi arch)
+        if: steps.check-image.outputs.exists != 'true'
         uses: docker/setup-qemu-action@v3
 
       - name: Setup Docker Buildx
+        if: steps.check-image.outputs.exists != 'true'
         uses: docker/setup-buildx-action@v3
 
       - name: Build and push Docker image
+        if: steps.check-image.outputs.exists != 'true'
         uses: docker/build-push-action@v6
         with:
           context: .

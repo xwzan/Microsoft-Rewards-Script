@@ -3,6 +3,7 @@ import type { Page } from 'patchright'
 import type { MicrosoftRewardsBot } from '../../index'
 import { saveStorageState } from '../../util/SessionStore'
 import { unknownPageDiagnostic } from '../../util/ErrorDiagnostic'
+import { configureMediaBlocking, suspendMediaBlocking } from '../MediaBlocker'
 
 import { MobileAccessLogin } from './methods/MobileAccessLogin'
 import { EmailLogin } from './methods/EmailLogin'
@@ -91,6 +92,7 @@ export class Login {
 
     async login(page: Page, account: Account) {
         try {
+            suspendMediaBlocking(this.bot, page.context())
             this.capturedUnknownUrls.clear()
             this.signInMethodsLogged = false
             this.passwordlessMethodSelected = false
@@ -465,8 +467,23 @@ export class Login {
             }
 
             case 'ERROR_ALERT': {
-                const alertEl = page.locator(this.selectors.errorAlert)
-                const errorMsg = await alertEl.innerText().catch(() => 'Unknown Error')
+                // 页面上可能同时存在多个 role=alert 容器（含跳转瞬间的空 aria-live 区域），
+                // 只有携带非空文本的才是真实错误
+                const alertEls = page.locator(this.selectors.errorAlert)
+                const alertCount = await alertEls.count()
+                let errorMsg = ''
+                for (let i = 0; i < alertCount; i++) {
+                    const text = (await alertEls.nth(i).innerText().catch(() => '')).trim()
+                    if (text) {
+                        errorMsg = text
+                        break
+                    }
+                }
+                if (!errorMsg) {
+                    this.bot.logger.warn(this.bot.isMobile, 'LOGIN', '告警容器无文本，视为瞬时状态，稍后重新检测')
+                    await this.bot.utils.wait(2000)
+                    return true
+                }
                 this.bot.logger.error(this.bot.isMobile, 'LOGIN', `账户错误: ${errorMsg}`)
                 throw new Error(`Microsoft login error: ${errorMsg}`)
             }
@@ -901,6 +918,7 @@ export class Login {
         )
         saveStorageState(this.bot.config.sessionPath, account.email, this.bot.isMobile, storageState)
 
+        await configureMediaBlocking(this.bot, context)
         this.bot.logger.info(this.bot.isMobile, 'LOGIN', '登录完成，会话已保存')
     }
 
